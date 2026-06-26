@@ -1,10 +1,20 @@
+// ============================================
+// TaskMaster Pro - Frontend
+// ============================================
+
 const API_URL = 'http://localhost:8000';
 
+// Elementos del DOM
 const taskForm = document.getElementById('taskForm');
 const tasksList = document.getElementById('tasksList');
 const filterStatus = document.getElementById('filterStatus');
 const filterPriority = document.getElementById('filterPriority');
 const searchText = document.getElementById('searchText');
+const languageSelect = document.getElementById('languageSelect');
+
+// ============================================
+// FUNCIONES DE API
+// ============================================
 
 async function fetchTasks() {
     try {
@@ -17,7 +27,7 @@ async function fetchTasks() {
         if (!response.ok) throw new Error('Error');
         return await response.json();
     } catch (error) {
-        showNotification('Error al cargar tareas', 'error');
+        showNotification(t('msgErrorLoad'), 'error');
         return [];
     }
 }
@@ -32,7 +42,7 @@ async function createTask(taskData) {
         if (!response.ok) throw new Error('Error');
         return await response.json();
     } catch (error) {
-        showNotification('Error al crear tarea', 'error');
+        showNotification(t('msgErrorCreate'), 'error');
         return null;
     }
 }
@@ -43,7 +53,7 @@ async function toggleTask(taskId) {
         if (!response.ok) throw new Error('Error');
         return await response.json();
     } catch (error) {
-        showNotification('Error al actualizar', 'error');
+        showNotification(t('msgErrorUpdate'), 'error');
         return null;
     }
 }
@@ -53,7 +63,7 @@ async function deleteTask(taskId) {
         const response = await fetch(`${API_URL}/tasks/${taskId}`, { method: 'DELETE' });
         return response.ok;
     } catch (error) {
-        showNotification('Error al eliminar', 'error');
+        showNotification(t('msgErrorDelete'), 'error');
         return false;
     }
 }
@@ -66,9 +76,13 @@ async function fetchStats() {
     } catch (error) { return null; }
 }
 
+// ============================================
+// FUNCIONES DE UI
+// ============================================
+
 function renderTasks(tasks) {
     if (tasks.length === 0) {
-        tasksList.innerHTML = '<p class="empty-state">No hay tareas. Crea una nueva!</p>';
+        tasksList.innerHTML = `<p class="empty-state">${t('emptyState')}</p>`;
         return;
     }
     
@@ -116,6 +130,10 @@ function showNotification(message, type = 'success') {
     setTimeout(() => notification.remove(), 3000);
 }
 
+// ============================================
+// MANEJADORES DE EVENTOS
+// ============================================
+
 async function loadTasks() {
     const tasks = await fetchTasks();
     renderTasks(tasks);
@@ -129,27 +147,33 @@ async function handleSubmit(e) {
         title: document.getElementById('title').value,
         description: document.getElementById('description').value || null,
         priority: document.getElementById('priority').value,
-        category: document.getElementById('category').value || 'general'
+        category: document.getElementById('category').value || t('defaultCategory')
     };
     const created = await createTask(taskData);
     if (created) {
-        showNotification('Tarea creada!');
+        showNotification(t('msgTaskCreated'));
         taskForm.reset();
         document.getElementById('priority').value = 'medium';
-        document.getElementById('category').value = 'general';
+        document.getElementById('category').value = t('defaultCategory');
         await loadTasks();
     }
 }
 
 async function handleToggle(taskId) {
     const updated = await toggleTask(taskId);
-    if (updated) { showNotification(updated.completed ? 'Completada!' : 'Reactivada!'); await loadTasks(); }
+    if (updated) {
+        showNotification(updated.completed ? t('msgTaskCompleted') : t('msgTaskReactivated'));
+        await loadTasks();
+    }
 }
 
 async function handleDelete(taskId) {
-    if (!confirm('Eliminar esta tarea?')) return;
+    if (!confirm(t('confirmDelete'))) return;
     const deleted = await deleteTask(taskId);
-    if (deleted) { showNotification('Eliminada'); await loadTasks(); }
+    if (deleted) {
+        showNotification(t('msgTaskDeleted'));
+        await loadTasks();
+    }
 }
 
 function debounce(func, wait) {
@@ -160,9 +184,33 @@ function debounce(func, wait) {
     };
 }
 
+// ============================================
+// INICIALIZACION
+// ============================================
+
 taskForm.addEventListener('submit', handleSubmit);
 filterStatus.addEventListener('change', loadTasks);
 filterPriority.addEventListener('change', loadTasks);
 searchText.addEventListener('input', debounce(loadTasks, 300));
 
-document.addEventListener('DOMContentLoaded', loadTasks);
+// Evento del selector de idioma
+if (languageSelect) {
+    languageSelect.addEventListener('change', function() {
+        setLanguage(this.value);
+    });
+}
+
+// Cargar tareas al iniciar
+document.addEventListener('DOMContentLoaded', () => {
+    // Inicializar idioma guardado
+    const savedLang = localStorage.getItem('taskmaster-lang') || 'es';
+    
+    // Establecer valor del select de idioma
+    if (languageSelect) {
+        languageSelect.value = savedLang;
+    }
+    
+    // Actualizar UI con el idioma guardado
+    currentLang = savedLang;
+    updateUI();
+});

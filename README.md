@@ -42,5 +42,5 @@ http://localhost:8000/docs
 | **Iniciar backend**   | `cd backend && source venv/bin/activate && uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload`|
 | **Iniciar frontend**  | `cd frontend && python3 -m http.server 3000`|
 | **Ver API**           | `curl http://localhost:8000/health`|
-| **Ver app web**       | Chromium → `http://localhost:3000`|
-| **Ver documentación** | Chromium → `http://localhost:8000/docs`|
+| **Ver app web**       | `http://localhost:3000`|
+| **Ver documentación** | `http://localhost:8000/docs`|
